@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: website-configmap-new
+data:
+  build-script.sh: |
+    #!/bin/bash
+    apt-get update
+    apt-get install -y git make curl
+    git clone https://github.com/chazapis/hy548.git
+    cd hy548
+    git submodule update --init --recursive
+    apt-get update
+    curl -LO https://github.com/gohugoio/hugo/releases/download/v0.96.0/hugo_extended_0.96.0_Linux-64bit.tar.gz
+    tar -xf hugo_extended_0.96.0_Linux-64bit.tar.gz
+    mv hugo /usr/local/bin/
+    make
+    cp -r html/public/* /website
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ubuntu-pvc
+spec:
+  storageClassName: ""
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ubuntu-pv
+spec:
+  accessModes: [ReadWriteOnce]
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /website
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-website-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: build-website-container
+          image: ubuntu:20.04
+          command: ["/bin/bash", "-c"]
+          args: ["cat /scripts/build-script.sh | bash"]
+          volumeMounts:
+            - name: script-vol
+              mountPath: /scripts
+            - name: website-all
+              mountPath: /website
+      restartPolicy: Never
+      volumes:
+        - name: script-vol
+          configMap:
+            name: website-configmap-new
+        - name: website-all
+          persistentVolumeClaim:
+            claimName: ubuntu-pvc
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:1.23.3-alpine
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: website-all
+      mountPath: /usr/share/nginx/html
+  volumes:
+  - name: website-all
+    persistentVolumeClaim:
+      claimName: ubuntu-pvc
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: refresh-content
+spec:
+  schedule: "15 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: refresh-container
+              image: ubuntu
+              command: ["/bin/bash", "-c"]
+              args: ["cd /website && git pull origin master"]
+          restartPolicy: OnFailure
