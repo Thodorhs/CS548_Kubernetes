@@ -23,6 +23,7 @@ CS-548: Cloud-native Software Architectures Computer Science Department • Univ
 
 *Part3 files are in CS548_Kubernetes/part3-singleYAML/*
 ## Part4:
- - To apply the yaml ```kubectl apply -f deploy.yaml``` then to port forward the service ```kubectl port-forward services/nginx-service 8080:8080 &``` and then access via browser **http://localhost:8080**.
+ - To apply the yaml ```kubectl apply -f deploy.yaml``` then to port forward the service ```kubectl port-forward svc/nginx-service 8080:8080 &``` and then access via browser **http://localhost:8080**.
 
 *Part4 files are in CS548_Kubernetes/part4-deploy/*
+
