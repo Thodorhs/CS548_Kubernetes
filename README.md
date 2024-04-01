@@ -22,3 +22,7 @@ CS-548: Cloud-native Software Architectures Computer Science Department • Univ
   - I used shared volumes. Specifically, PersistentVolumeClaims (PVCs) and PersistentVolumes (PVs) to create shared storage that can be mounted into multiple containers. The "build-website-job" container executes build-script.sh that generates website files and stores them in the persistent volume. The "nginx-pod" container mounts the same persistent volume and serves the website files from it by mounting it into the /usr/share/nginx/html directory.
 
 *Part3 files are in CS548_Kubernetes/part3-singleYAML/*
+## Part4:
+ - To apply the yaml ```kubectl apply -f deploy.yaml``` then to port forward the service ```kubectl port-forward services/nginx-service 8080:8080 &``` and then access via browser **http://localhost:8080**.
+
+*Part4 files are in CS548_Kubernetes/part4-deploy/*
